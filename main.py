@@ -4,12 +4,13 @@ import random
 import os
 import datetime
 import pytz
-from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
+from pydantic import BaseModel
 from PIL import Image
 
 from parser import parse
@@ -20,17 +21,30 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Modèle de la base de données
+# Modèles de la base de données
 class Crossword(Base):
     __tablename__ = "crosswords"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    coordinates = Column(Text) # Remplacer matrix par coordinates
+    coordinates = Column(Text)
     user_letters = Column(Text, default="{}")
     image_path = Column(String, nullable=True)
     square_height = Column(Integer, nullable=True)
 
+class Message(Base):
+    __tablename__ = "messages"
+    id = Column(Integer, primary_key=True, index=True)
+    crossword_id = Column(Integer, index=True)
+    name = Column(String)
+    text = Column(Text)
+    timestamp = Column(String)
+
 Base.metadata.create_all(bind=engine)
+
+# Modèles Pydantic
+class MessageCreate(BaseModel):
+    name: str
+    text: str
 
 app = FastAPI()
 
@@ -160,6 +174,34 @@ async def update_cell(data: dict, db: Session = Depends(get_db)):
     db.commit()
     
     return {"status": "ok"}
+
+# --- Endpoints pour la discussion ---
+
+@app.get("/messages/{crossword_id}/")
+async def get_messages(crossword_id: int, db: Session = Depends(get_db)):
+    messages = db.query(Message).filter(Message.crossword_id == crossword_id).order_by(Message.timestamp.asc()).all()
+    return messages
+
+@app.post("/messages/{crossword_id}/")
+async def post_message(crossword_id: int, message: MessageCreate, response: Response, db: Session = Depends(get_db)):
+    paris_tz = pytz.timezone("Europe/Paris")
+    timestamp = datetime.datetime.now(paris_tz).isoformat()
+    
+    new_message = Message(
+        crossword_id=crossword_id,
+        name=message.name,
+        text=message.text,
+        timestamp=timestamp
+    )
+    db.add(new_message)
+    db.commit()
+    db.refresh(new_message)
+    
+    # Sauvegarder le nom dans un cookie
+    response.set_cookie(key="crossword_username", value=message.name, max_age=365*24*60*60) # 1 an
+    
+    return new_message
+
 
 if __name__ == "__main__":
     import uvicorn

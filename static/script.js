@@ -6,7 +6,11 @@ class CrosswordApp {
 
     init() {
         this.setupEventListeners();
-        this.loadCrosswordsList();
+        // Charger la liste, PUIS essayer de restaurer le dernier mot croisé
+        this.loadCrosswordsList().then(() => {
+            this.loadCrosswordFromStorage();
+        });
+        this.loadUserNameFromCookie();
     }
 
     setupEventListeners() {
@@ -21,6 +25,11 @@ class CrosswordApp {
                 this.toggleMenu(false);
             }
         });
+
+        // --- Discussion ---
+        document.getElementById('chatFab').addEventListener('click', () => this.toggleChat(true));
+        document.getElementById('closeChatBtn').addEventListener('click', () => this.toggleChat(false));
+        document.getElementById('sendMessageBtn').addEventListener('click', () => this.sendMessage());
 
         // --- Upload ---
         document.getElementById('uploadBtn').addEventListener('click', () => {
@@ -49,6 +58,20 @@ class CrosswordApp {
         });
     }
 
+    loadCrosswordFromStorage() {
+        const storedId = localStorage.getItem('currentCrosswordId');
+        if (storedId) {
+            const select = document.getElementById('crosswordSelect');
+            // Vérifier si l'ID sauvegardé existe toujours dans la liste
+            if ([...select.options].some(opt => opt.value === storedId)) {
+                select.value = storedId;
+                this.loadSelectedCrossword();
+            } else {
+                localStorage.removeItem('currentCrosswordId');
+            }
+        }
+    }
+
     toggleMenu(forceState) {
         const menu = document.getElementById('floatingMenu');
         const fab = document.getElementById('fab');
@@ -57,6 +80,81 @@ class CrosswordApp {
         menu.classList.toggle('active', shouldBeActive);
         fab.classList.toggle('active', shouldBeActive);
         fab.innerHTML = shouldBeActive ? '&times;' : '...';
+    }
+
+    toggleChat(open) {
+        if (open && !this.currentCrosswordId) {
+            alert("Veuillez d'abord charger un mot croisé.");
+            return;
+        }
+        const chatPanel = document.getElementById('chatPanel');
+        chatPanel.classList.toggle('active', open);
+        if (open) {
+            this.loadMessages();
+        }
+    }
+
+    loadUserNameFromCookie() {
+        const name = document.cookie.split('; ').find(row => row.startsWith('crossword_username='))?.split('=')[1];
+        if (name) {
+            document.getElementById('userNameInput').value = decodeURIComponent(name);
+        }
+    }
+
+    async loadMessages() {
+        if (!this.currentCrosswordId) return;
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML = 'Chargement...';
+
+        try {
+            const response = await fetch(`/messages/${this.currentCrosswordId}/`);
+            const messages = await response.json();
+            messagesContainer.innerHTML = '';
+            messages.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message';
+                
+                const nameSpan = document.createElement('div');
+                nameSpan.className = 'name';
+                nameSpan.textContent = msg.name;
+
+                const textDiv = document.createElement('div');
+                textDiv.className = 'text';
+                textDiv.textContent = msg.text;
+
+                const timeSpan = document.createElement('div');
+                timeSpan.className = 'timestamp';
+                timeSpan.textContent = new Date(msg.timestamp).toLocaleString('fr-FR');
+
+                msgDiv.append(nameSpan, textDiv, timeSpan);
+                messagesContainer.appendChild(msgDiv);
+            });
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        } catch (error) {
+            messagesContainer.innerHTML = 'Erreur de chargement des messages.';
+        }
+    }
+
+    async sendMessage() {
+        const name = document.getElementById('userNameInput').value.trim();
+        const text = document.getElementById('messageInput').value.trim();
+
+        if (!name || !text) {
+            alert('Le nom et le message ne peuvent pas être vides.');
+            return;
+        }
+
+        try {
+            await fetch(`/messages/${this.currentCrosswordId}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, text })
+            });
+            document.getElementById('messageInput').value = '';
+            this.loadMessages(); // Recharger les messages
+        } catch (error) {
+            alert('Erreur lors de l\'envoi du message.');
+        }
     }
 
     async loadCrosswordsList() {
@@ -94,7 +192,6 @@ class CrosswordApp {
             if (response.ok) {
                 const crossword = await response.json();
                 this.displayCrossword(crossword);
-                this.currentCrosswordId = crossword.id;
                 this.showStatus('Succès !', 'success');
                 this.toggleMenu(false);
                 await this.loadCrosswordsList();
@@ -120,7 +217,6 @@ class CrosswordApp {
             if (response.ok) {
                 const crossword = await response.json();
                 this.displayCrossword(crossword);
-                this.currentCrosswordId = crosswordId;
                 this.toggleMenu(false);
             } else {
                 this.showStatus('Erreur chargement.', 'error');
@@ -131,14 +227,18 @@ class CrosswordApp {
     }
 
     displayCrossword(crossword) {
+        this.currentCrosswordId = crossword.id;
+        localStorage.setItem('currentCrosswordId', crossword.id); // Sauvegarde de l'ID
+
         const container = document.getElementById('crosswordContainer');
         container.innerHTML = '';
 
         const img = document.createElement('img');
         img.src = `/${crossword.image_path}`;
         img.onload = () => {
-            const ratio = img.width / img.naturalWidth;
-            const inputSize = (crossword.square_height || 30) * ratio * 0.9;
+            // Utiliser le ratio de la hauteur pour être plus fiable, car la largeur peut être limitée par le conteneur
+            const ratio = img.height / img.naturalHeight;
+            const inputSize = (crossword.square_height || 30) * ratio * 0.9; // 90% de la hauteur de la case
             const fontSize = inputSize * 0.7;
 
             crossword.coordinates.forEach((coord, index) => {
@@ -148,6 +248,8 @@ class CrosswordApp {
             });
         };
         container.appendChild(img);
+
+        document.getElementById('chatFab').style.display = 'block';
     }
 
     createInput(index, coord, naturalWidth, naturalHeight, inputSize, fontSize) {

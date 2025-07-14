@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mots Croisés Interactif</title>
+    <title>Mots croisés du palmypède</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -11,12 +11,11 @@
     <main id="mainContent">
         <div id="crosswordContainer" class="crossword-container">
             <div class="placeholder">
-                <p>Bienvenue !</p>
-                <p>Cliquez sur le menu en bas à droite pour commencer.</p>
             </div>
         </div>
     </main>
 
+    <!-- Menu flottant pour les options -->
     <div id="floatingMenu" class="floating-menu">
         <div class="menu-section">
             <h2>Uploader</h2>
@@ -36,8 +35,24 @@
             <button id="loadBtn" class="btn" style="display: none;">Charger</button>
         </div>
     </div>
-
     <button id="fab" class="fab">...</button>
+
+    <!-- Bouton et panneau de discussion -->
+    <button id="chatFab" class="fab chat-fab">💬</button>
+    <div id="chatPanel" class="chat-panel">
+        <div class="chat-header">
+            <h3>Discussion</h3>
+            <button id="closeChatBtn" class="close-chat-btn">&times;</button>
+        </div>
+        <div id="chatMessages" class="chat-messages">
+            <!-- Les messages seront injectés ici -->
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="userNameInput" placeholder="Votre nom...">
+            <textarea id="messageInput" placeholder="Votre message..." rows="2"></textarea>
+            <button id="sendMessageBtn" class="btn">Envoyer</button>
+        </div>
+    </div>
 
     <script src="/static/script.js"></script>
 </body>
