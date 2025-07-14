@@ -1,7 +1,7 @@
 import os
 import time
-from datetime import datetime, timedelta
-from commit_changes import update_file_on_github
+from datetime import datetime
+from commit_changes import commit_database, commit_new_images
 
 # --- Configuration ---
 DB_FILE_PATH = "crosswords.db"
@@ -35,14 +35,18 @@ def main():
         if not committed and (time.time() - last_known_mod_time) > INACTIVITY_SECONDS:
             print(f"[{datetime.now()}] Période d'inactivité de {INACTIVITY_SECONDS}s atteinte.")
             
-            if update_file_on_github():
+            # On tente de commiter la base de données et les nouvelles images
+            db_success = commit_database()
+            images_success = commit_new_images()
+
+            if db_success and images_success:
                 # Le commit a réussi, on met à jour l'état
                 committed = True
                 # On met à jour l'heure de modif connue pour ne pas recommiter immédiatement
                 last_known_mod_time = get_last_modification_time()
             else:
                 # Le commit a échoué, on réessaiera plus tard
-                print("Le commit a échoué. Une nouvelle tentative aura lieu après la prochaine période d'inactivité.")
+                print("Un ou plusieurs commits ont échoué. Une nouvelle tentative aura lieu après la prochaine période d'inactivité.")
                 # On met quand même à jour l'heure pour éviter une boucle de tentatives rapides
                 last_known_mod_time = time.time()
 
