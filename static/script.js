@@ -243,7 +243,11 @@ class CrosswordApp {
 
             crossword.coordinates.forEach((coord, index) => {
                 const input = this.createInput(index, coord, img.naturalWidth, img.naturalHeight, inputSize, fontSize);
-                input.value = crossword.user_letters[index] || '';
+                const savedLetter = crossword.user_letters[index] || '';
+                input.value = savedLetter;
+                if (savedLetter) {
+                    input.classList.add('has-value');
+                }
                 container.appendChild(input);
             });
         };
@@ -273,6 +277,12 @@ class CrosswordApp {
     async handleCellInput(event, cellIndex) {
         const letter = event.target.value.toUpperCase();
         event.target.value = letter;
+
+        if (letter) {
+            event.target.classList.add('has-value');
+        } else {
+            event.target.classList.remove('has-value');
+        }
         
         if (!this.currentCrosswordId) return;
         

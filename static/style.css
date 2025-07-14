@@ -167,7 +167,10 @@ main {
     padding: 0;
     color: #333;
     transition: all 0.2s ease;
-    opacity:0.5;
+}
+
+.crossword-input.has-value {
+    background: rgba(255, 255, 255, 0.9);
 }
 
 .crossword-input:focus {

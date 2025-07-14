@@ -17,13 +17,13 @@ def parse(image_path: str) -> None:
     img_blur = cv2.GaussianBlur(gray, (5, 5), 0)  # Apply Gaussian blur to reduce noise
 
     edges = cv2.Canny(img_blur,100,200,apertureSize = 3)
-    cv2.imwrite('canny1.jpg',edges)
+    #cv2.imwrite('canny1.jpg',edges)
     kernel = np.ones((15,15),np.uint8)
     edges = cv2.dilate(edges,kernel,iterations = 1)
-    cv2.imwrite('canny2.jpg',edges)
+    #cv2.imwrite('canny2.jpg',edges)
     kernel = np.ones((2,2),np.uint8)
     edges = cv2.erode(edges,kernel,iterations = 1)
-    cv2.imwrite('canny3.jpg',edges)
+    #cv2.imwrite('canny3.jpg',edges)
 
     thresh = cv2.adaptiveThreshold(img_blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,57,5)
 
@@ -82,9 +82,9 @@ def parse(image_path: str) -> None:
         y_lines.append(
             fit_line(df.center_x.to_numpy(), df.center_y.to_numpy())
         )
-    cv2.imwrite('thresh.jpg', thresh)
-    cv2.imwrite('lines.jpg', image)
-    cv2.imwrite('contours.jpg', white_image)
+    #cv2.imwrite('thresh.jpg', thresh)
+    #cv2.imwrite('lines.jpg', image)
+    #cv2.imwrite('contours.jpg', white_image)
     from itertools import chain
 
     for line in chain(x_lines, y_lines):
@@ -93,7 +93,7 @@ def parse(image_path: str) -> None:
         y = m * x + b
         for i in range(len(x) - 1):
             cv2.line(white_image, (int(x[i]), int(y[i])), (int(x[i+1]), int(y[i+1])), (0, 255, 0), 2)
-    cv2.imwrite('contours.jpg', white_image)
+    #cv2.imwrite('contours.jpg', white_image)
     from itertools import product
 
     intersections = []
@@ -128,7 +128,7 @@ def parse(image_path: str) -> None:
     delta_argmax = df_inter.delta.argmax()
     df_inter["is_white"] = df_inter.index >= delta_argmax
     df_inter["is_white"].value_counts()
-    cv2.imwrite('points.jpg', clean_image)
+    #cv2.imwrite('points.jpg', clean_image)
 
     df = df_inter[df_inter["is_white"]]
     coords = list(zip(df['x'].astype(int), df['y'].astype(int)))
