@@ -2,6 +2,8 @@ import io
 import json
 import random
 import os
+import datetime
+import pytz
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -73,10 +75,13 @@ async def read_root():
 async def upload_crossword(file: UploadFile = File(...), db: Session = Depends(get_db)):
     contents = await file.read()
 
-    # Sauvegarder le fichier image
-    # Utiliser un nom de fichier sécurisé pour éviter les conflits
-    safe_filename = f"{random.randint(1000,9999)}_{file.filename}"
-    file_path = os.path.join(UPLOADS_DIR, safe_filename)
+    # Générer un nom de fichier basé sur la date et l'heure (fuseau horaire de Paris)
+    paris_tz = pytz.timezone("Europe/Paris")
+    timestamp = datetime.datetime.now(paris_tz).strftime("%Y%m%d-%H%M")
+    file_extension = os.path.splitext(file.filename)[1]
+    new_filename = f"{timestamp}{file_extension}"
+    
+    file_path = os.path.join(UPLOADS_DIR, new_filename)
     with open(file_path, "wb") as f:
         f.write(contents)
     
@@ -88,7 +93,7 @@ async def upload_crossword(file: UploadFile = File(...), db: Session = Depends(g
         return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
 
     new_crossword = Crossword(
-        name=file.filename,
+        name=new_filename,
         coordinates=json.dumps(coordinates),
         image_path=file_path,
         square_height=square_height

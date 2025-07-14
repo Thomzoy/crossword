@@ -10,6 +10,18 @@ class CrosswordApp {
     }
 
     setupEventListeners() {
+        // --- Menu Flottant ---
+        document.getElementById('fab').addEventListener('click', () => this.toggleMenu());
+
+        // Clic en dehors du menu pour le fermer
+        document.addEventListener('click', (event) => {
+            const menu = document.getElementById('floatingMenu');
+            const fab = document.getElementById('fab');
+            if (!menu.contains(event.target) && !fab.contains(event.target) && menu.classList.contains('active')) {
+                this.toggleMenu(false);
+            }
+        });
+
         // --- Upload ---
         document.getElementById('uploadBtn').addEventListener('click', () => {
             document.getElementById('fileInput').click();
@@ -19,7 +31,7 @@ class CrosswordApp {
             const file = e.target.files[0];
             if (file) {
                 document.getElementById('fileName').textContent = file.name;
-                document.getElementById('submitBtn').style.display = 'inline-block';
+                document.getElementById('submitBtn').style.display = 'block';
             }
         });
 
@@ -29,12 +41,22 @@ class CrosswordApp {
 
         // --- Sélection ---
         document.getElementById('crosswordSelect').addEventListener('change', (e) => {
-            document.getElementById('loadBtn').style.display = e.target.value ? 'inline-block' : 'none';
+            document.getElementById('loadBtn').style.display = e.target.value ? 'block' : 'none';
         });
 
         document.getElementById('loadBtn').addEventListener('click', () => {
             this.loadSelectedCrossword();
         });
+    }
+
+    toggleMenu(forceState) {
+        const menu = document.getElementById('floatingMenu');
+        const fab = document.getElementById('fab');
+        const shouldBeActive = forceState !== undefined ? forceState : !menu.classList.contains('active');
+
+        menu.classList.toggle('active', shouldBeActive);
+        fab.classList.toggle('active', shouldBeActive);
+        fab.innerHTML = shouldBeActive ? '&times;' : '...';
     }
 
     async loadCrosswordsList() {
@@ -43,7 +65,8 @@ class CrosswordApp {
             const crosswords = await response.json();
             
             const select = document.getElementById('crosswordSelect');
-            select.innerHTML = '<option value="">-- Choisir un mots croisés --</option>';
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">-- Choisir --</option>';
             
             crosswords.forEach(crossword => {
                 const option = document.createElement('option');
@@ -51,6 +74,7 @@ class CrosswordApp {
                 option.textContent = crossword.name;
                 select.appendChild(option);
             });
+            select.value = currentValue;
         } catch (error) {
             console.error('Erreur chargement liste:', error);
         }
@@ -59,48 +83,36 @@ class CrosswordApp {
     async uploadAndDisplayCrossword() {
         const fileInput = document.getElementById('fileInput');
         const file = fileInput.files[0];
-        
-        if (!file) {
-            this.showStatus('Veuillez sélectionner un fichier', 'error');
-            return;
-        }
+        if (!file) return;
 
         const formData = new FormData();
         formData.append('file', file);
-
+        this.showStatus('Upload en cours...', 'loading');
+        
         try {
-            this.showStatus('Upload et traitement en cours...', 'loading');
-            
-            const response = await fetch('/upload-crossword/', {
-                method: 'POST',
-                body: formData
-            });
-
+            const response = await fetch('/upload-crossword/', { method: 'POST', body: formData });
             if (response.ok) {
                 const crossword = await response.json();
-                this.showStatus('Mots croisés prêt !', 'success');
                 this.displayCrossword(crossword);
                 this.currentCrosswordId = crossword.id;
-                
-                // Reset form et recharge la liste
-                fileInput.value = '';
-                document.getElementById('fileName').textContent = '';
-                document.getElementById('submitBtn').style.display = 'none';
+                this.showStatus('Succès !', 'success');
+                this.toggleMenu(false);
                 await this.loadCrosswordsList();
             } else {
                 const error = await response.json();
                 this.showStatus(`Erreur: ${error.detail}`, 'error');
             }
         } catch (error) {
-            console.error('Erreur upload:', error);
-            this.showStatus('Erreur lors de l\'upload', 'error');
+            this.showStatus('Erreur upload.', 'error');
+        } finally {
+            fileInput.value = '';
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('submitBtn').style.display = 'none';
         }
     }
 
     async loadSelectedCrossword() {
-        const select = document.getElementById('crosswordSelect');
-        const crosswordId = select.value;
-        
+        const crosswordId = document.getElementById('crosswordSelect').value;
         if (!crosswordId) return;
 
         try {
@@ -109,62 +121,51 @@ class CrosswordApp {
                 const crossword = await response.json();
                 this.displayCrossword(crossword);
                 this.currentCrosswordId = crosswordId;
+                this.toggleMenu(false);
             } else {
-                this.showStatus('Erreur chargement mots croisés', 'error');
+                this.showStatus('Erreur chargement.', 'error');
             }
         } catch (error) {
-            console.error('Erreur:', error);
-            this.showStatus('Erreur chargement mots croisés', 'error');
+            this.showStatus('Erreur chargement.', 'error');
         }
     }
 
     displayCrossword(crossword) {
-        const gridSection = document.getElementById('gridSection');
-        const gridTitle = document.getElementById('gridTitle');
         const container = document.getElementById('crosswordContainer');
-        
-        gridTitle.textContent = `📝 ${crossword.name}`;
-        container.innerHTML = ''; // Vider le contenu précédent
+        container.innerHTML = '';
 
-        // Créer l'image de fond
         const img = document.createElement('img');
         img.src = `/${crossword.image_path}`;
         img.onload = () => {
-            // Calculer le ratio entre la taille réelle de l'image et sa taille affichée
             const ratio = img.width / img.naturalWidth;
-            const inputSize = crossword.square_height * ratio * 0.9; // 90% de la hauteur de la case
+            const inputSize = (crossword.square_height || 30) * ratio * 0.9;
             const fontSize = inputSize * 0.7;
 
-            // Créer les inputs une fois l'image chargée pour avoir les bonnes dimensions
             crossword.coordinates.forEach((coord, index) => {
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.maxLength = 1;
-                input.className = 'crossword-input';
-                input.dataset.index = index;
-
-                // Définir la taille et la position
-                input.style.width = `${inputSize}px`;
-                input.style.height = `${inputSize}px`;
-                input.style.fontSize = `${fontSize}px`;
-                input.style.left = `${(coord[0] / img.naturalWidth) * 100}%`;
-                input.style.top = `${(coord[1] / img.naturalHeight) * 100}%`;
-
-                // Remplir avec la lettre sauvegardée
-                const savedLetter = crossword.user_letters[index];
-                if (savedLetter) {
-                    input.value = savedLetter;
-                }
-
-                input.addEventListener('input', (e) => this.handleCellInput(e, index));
-                input.addEventListener('keydown', (e) => this.handleCellNavigation(e));
-
+                const input = this.createInput(index, coord, img.naturalWidth, img.naturalHeight, inputSize, fontSize);
+                input.value = crossword.user_letters[index] || '';
                 container.appendChild(input);
             });
         };
         container.appendChild(img);
+    }
+
+    createInput(index, coord, naturalWidth, naturalHeight, inputSize, fontSize) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 1;
+        input.className = 'crossword-input';
+        input.dataset.index = index;
         
-        gridSection.style.display = 'block';
+        input.style.width = `${inputSize}px`;
+        input.style.height = `${inputSize}px`;
+        input.style.fontSize = `${fontSize}px`;
+        input.style.left = `${(coord[0] / naturalWidth) * 100}%`;
+        input.style.top = `${(coord[1] / naturalHeight) * 100}%`;
+
+        input.addEventListener('input', (e) => this.handleCellInput(e, index));
+        input.addEventListener('keydown', (e) => this.handleCellNavigation(e));
+        return input;
     }
 
     async handleCellInput(event, cellIndex) {
@@ -221,7 +222,7 @@ class CrosswordApp {
         else if (type === 'error') statusDiv.classList.add('status-error');
         
         if (type !== 'loading') {
-            setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+            setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
         }
     }
 }
