@@ -1,0 +1,205 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+h1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 30px;
+    font-size: 2.5em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.section {
+    padding: 30px;
+    border-bottom: 1px solid #eee;
+}
+
+.section:last-child {
+    border-bottom: none;
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+}
+
+.upload-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+}
+
+.select {
+    padding: 12px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+    min-width: 300px;
+    margin-right: 15px;
+}
+
+.select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+#fileName {
+    color: #666;
+    font-style: italic;
+}
+
+#uploadStatus {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    display: none;
+}
+
+.status-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.crossword-container {
+    position: relative;
+    display: inline-block; /* S'adapte à la taille de l'image */
+    margin: auto; /* Centre le conteneur */
+}
+
+.crossword-container img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.crossword-input {
+    position: absolute;
+    /* La taille sera définie dynamiquement par JS */
+    transform: translate(-50%, -50%); /* Centre l'input sur la coordonnée */
+    border: 1px solid rgba(0, 119, 255, 0.8);
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    text-transform: uppercase;
+    outline: none;
+    padding: 0;
+    color: #333;
+    transition: all 0.2s ease;
+}
+
+.crossword-input:focus {
+    background: #e3f2fd;
+    border-color: #ff4500;
+    transform: translate(-50%, -50%) scale(1.1);
+    z-index: 10;
+}
+
+
+#gridSection {
+    text-align: center;
+    overflow-x: auto; /* Permet de scroller horizontalement si la grille est trop large */
+}
+
+.loading {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        margin: 10px;
+        border-radius: 10px;
+    }
+    
+    h1 {
+        font-size: 2em;
+        padding: 20px;
+    }
+    
+    .section {
+        padding: 20px;
+    }
+    
+    .upload-area {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .select {
+        min-width: auto;
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+
+    /* Le style des inputs est maintenant géré par JS, 
+       donc pas de changement spécifique ici pour le responsive */
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mots Croisés Interactif</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🧩 Mots Croisés Interactif</h1>
+        
+        <!-- Section d'upload -->
+        <div class="section">
+            <h2>📤 Uploader une image de mots croisés</h2>
+            <div class="upload-area">
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                <button id="uploadBtn" class="btn btn-primary">Choisir une image</button>
+                <span id="fileName"></span>
+                <button id="submitBtn" class="btn btn-success" style="display: none;">Uploader et Afficher</button>
+            </div>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <!-- Section de sélection -->
+        <div class="section">
+            <h2>🎯 Ou sélectionner un mots croisés existant</h2>
+            <select id="crosswordSelect" class="select">
+                <option value="">-- Choisir un mots croisés --</option>
+            </select>
+            <button id="loadBtn" class="btn btn-primary" style="display: none;">Charger</button>
+        </div>
+
+        <!-- Section de la grille -->
+        <div class="section" id="gridSection" style="display: none;">
+            <h2 id="gridTitle"></h2>
+            <div id="crosswordContainer" class="crossword-container">
+                <!-- L'image et les inputs seront injectés ici -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
